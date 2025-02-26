@@ -33,3 +33,6 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache 
+
+bun.lock
+package-lock.json
