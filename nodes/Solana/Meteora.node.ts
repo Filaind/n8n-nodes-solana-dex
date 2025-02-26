@@ -123,8 +123,8 @@ export class Meteora implements INodeType {
                 const position = userPosition;
                 const startPrice = Number(position.positionData.positionBinData[0].pricePerToken);
                 const endPrice = Number(position.positionData.positionBinData[position.positionData.positionBinData.length - 1].pricePerToken);
-                const xAmount = Number(position.positionData.totalXAmount) / 10 ** 9;
-                const yAmount = Number(position.positionData.totalYAmount) / 10 ** 6;
+                const xAmount = Number(position.positionData.totalXAmount) / 10 ** 9; //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
+                const yAmount = Number(position.positionData.totalYAmount) / 10 ** 6; //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
 
                 returnData.push({
                     json: {
@@ -159,12 +159,14 @@ export class Meteora implements INodeType {
                 const removeLiquidityTx = await dlmmPool.removeLiquidity({
                     position: userPosition.publicKey,
                     user: user.publicKey,
-                    binIds: binIdsToRemove,
-                    bps: new BN(100 * 100),
+                    binIds: binIdsToRemove, //КАКИЕ БИНЫ ЗАБИРАЕМ
+                    bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
                     shouldClaimAndClose: true,
                 });
 
                 for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
+
+                    //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
                     tx.add(ComputeBudgetProgram.setComputeUnitPrice({
                         microLamports: 1000000
                     }));
@@ -229,6 +231,7 @@ export class Meteora implements INodeType {
                 },
             });
 
+            //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
             createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
                 microLamports: 1000000
             }));
