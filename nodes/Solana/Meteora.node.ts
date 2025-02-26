@@ -211,7 +211,7 @@ export class Meteora implements INodeType {
             const minBinId = activeBin.binId - 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
             const maxBinId = activeBin.binId + 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
-            const totalXAmount = new BN(userSolBalance * 0.9);
+            const totalXAmount = new BN(userSolBalance * 0.9); //ОСТАВИТЬ 0.01 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
             const totalYAmount = new BN(usdcForDeposit);
 
             const newBalancePosition = Keypair.generate();
