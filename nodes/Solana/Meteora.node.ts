@@ -208,8 +208,8 @@ export class Meteora implements INodeType {
             const usdcForDeposit = Number(usdcUserBalance.value.amount) / 10 ** 6;
 
             const activeBin = await dlmmPool.getActiveBin();
-            const minBinId = activeBin.binId - 33;
-            const maxBinId = activeBin.binId + 33;
+            const minBinId = activeBin.binId - 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
+            const maxBinId = activeBin.binId + 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
             const totalXAmount = new BN(userSolBalance * 0.9);
             const totalYAmount = new BN(usdcForDeposit);
