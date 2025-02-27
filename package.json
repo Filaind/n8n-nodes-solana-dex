@@ -1,7 +1,7 @@
 {
-  "name": "n8n-nodes-my-custom-node",
+  "name": "n8n-solana-nodes",
   "version": "1.0.0",
-  "description": "Мой собственный узел для n8n",
+  "description": "Solana nodes for n8n",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -12,6 +12,10 @@
     "node",
     "custom"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Filaind/n8n_solana.git"
+  },
   "author": "Ваше имя",
   "license": "MIT",
   "n8n": {
