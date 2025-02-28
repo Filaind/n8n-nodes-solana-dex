@@ -13,10 +13,10 @@ export async function getBalance(connection: Connection, wallet: string): Promis
 
 export async function transferSol(connection: Connection, user: Signer, walletAddressTo: string, amount: number): Promise<string> {
     const transaction = new Transaction().add(
+        ComputeBudgetProgram.setComputeUnitLimit({
+            units: 200000
+        }),
         SystemProgram.transfer({ fromPubkey: user.publicKey, toPubkey: new PublicKey(walletAddressTo), lamports: amount }),
-        ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 1000
-        })
     );
     const txHash = await sendAndConfirmTransaction(connection, transaction, [user]);
     return txHash;
