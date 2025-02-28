@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-solana-dex",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Solana DEX nodes for n8n",
   "main": "index.js",
   "scripts": {
