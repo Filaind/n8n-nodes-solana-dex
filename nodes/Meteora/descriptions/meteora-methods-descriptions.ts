@@ -92,6 +92,20 @@ export const openPosition: INodeProperties[] = [
       },
     ],
     description: 'The Meteora pool strategy to get info for',
+  },
+  {
+    displayName: 'Min Bin Id Offset',
+    name: 'minBinIdOffset',
+    type: 'number',
+    default: 33,
+    required: true,
+  },
+  {
+    displayName: 'Max Bin Id Offset',
+    name: 'maxBinIdOffset',
+    type: 'number',
+    default: 33,
+    required: true,
   }
 ];
 

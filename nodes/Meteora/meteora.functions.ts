@@ -65,7 +65,7 @@ export async function closeAllPositions(dlmmPool: DLMM, connection: Connection, 
 
                 //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
                 tx.add(ComputeBudgetProgram.setComputeUnitPrice({
-                    microLamports: 10000
+                    microLamports: 100000
                 }));
 
                 const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
@@ -93,7 +93,7 @@ export async function closeAllPositions(dlmmPool: DLMM, connection: Connection, 
     return returnData;
 }
 
-export async function openPosition(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType): Promise<INodeExecutionData[]> {
+export async function openPosition(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType, minBinIdOffset: number, maxBinIdOffset: number): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
     try {
         let userSolBalance = await connection.getBalance(user.publicKey);
@@ -106,13 +106,14 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
         const usdcUserBalance = await connection.getTokenAccountBalance(usdcTokenAccount);
         const usdcForDeposit = Number(usdcUserBalance.value.amount) / 10 ** 6;
 
-        const activeBin = await dlmmPool.getActiveBin();
-        const minBinId = activeBin.binId - 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
-        const maxBinId = activeBin.binId + 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
         //ОСТАВИТЬ 0.01 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
         userSolBalance -= LAMPORTS_PER_SOL * 0.01;
         userSolBalance -= LAMPORTS_PER_SOL * 0.06;
+
+        const activeBin = await dlmmPool.getActiveBin();
+        const minBinId = activeBin.binId - minBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
+        const maxBinId = activeBin.binId + maxBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
         const totalXAmount = new BN(userSolBalance);
         const totalYAmount = new BN(usdcForDeposit);
@@ -124,7 +125,7 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
             user: user.publicKey,
             totalXAmount,
             totalYAmount,
-            slippage: 0.03,
+            slippage: 0.1,
             strategy: {
                 maxBinId,
                 minBinId,
@@ -134,7 +135,7 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
 
         //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
         createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 10000
+            microLamports: 100000
         }));
 
         const createBalancePositionTxHash = await sendAndConfirmTransaction(
@@ -165,7 +166,7 @@ export async function claimAllRewards(dlmmPool: DLMM, connection: Connection, us
         const { userPositions } = await dlmmPool.getPositionsByUserAndLbPair(user.publicKey);
 
         for (let userPosition of userPositions) {
-            
+
             const claimRewardsTx = await dlmmPool.claimAllRewardsByPosition({
                 owner: user.publicKey,
                 position: userPosition,
@@ -175,7 +176,7 @@ export async function claimAllRewards(dlmmPool: DLMM, connection: Connection, us
 
                 //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
                 tx.add(ComputeBudgetProgram.setComputeUnitPrice({
-                    microLamports: 10000
+                    microLamports: 100000
                 }));
 
                 const claimRewardsTxHash = await sendAndConfirmTransaction(

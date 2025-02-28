@@ -41,7 +41,9 @@ export class Meteora implements INodeType {
                     break;
                 case 'openPosition':
                     const poolStrategy = this.getNodeParameter('poolStrategy', i) as StrategyType;
-                    returnData.push(...await openPosition(dlmmPool, connection, user, poolStrategy));
+                    const minBinIdOffset = this.getNodeParameter('minBinIdOffset', i) as number;
+                    const maxBinIdOffset = this.getNodeParameter('maxBinIdOffset', i) as number;    
+                    returnData.push(...await openPosition(dlmmPool, connection, user, poolStrategy, minBinIdOffset, maxBinIdOffset));
                     break;
                 case 'claimAllRewards':
                     returnData.push(...await claimAllRewards(dlmmPool, connection, user));
