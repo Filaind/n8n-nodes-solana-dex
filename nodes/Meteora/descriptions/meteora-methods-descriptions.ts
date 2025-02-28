@@ -99,6 +99,11 @@ export const openPosition: INodeProperties[] = [
     type: 'number',
     default: 33,
     required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPosition'],
+      },
+    },
   },
   {
     displayName: 'Max Bin Id Offset',
@@ -106,6 +111,11 @@ export const openPosition: INodeProperties[] = [
     type: 'number',
     default: 33,
     required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPosition'],
+      },
+    },
   }
 ];
 
