@@ -1,34 +1,36 @@
-## Установка и развертывание
+## Installation and Deployment
 
-### Локальная сборка
+This package provides custom nodes for n8n that allow integration with Solana blockchain and decentralized exchanges (DEX) like Jupiter and Meteora. It enables operations such as token swaps, getting quotes, checking token balances, and more on the Solana blockchain.
 
-1. Установите зависимости:
+### Local Build
+
+1. Install dependencies:
    ```
    npm i
    ```
 
-2. Соберите проект:
+2. Build the project:
    ```
    npm run build
    ```
 
-### Установка на сервер n8n
+### Installation on n8n Server
 
-1. Скопируйте содержимое папки `dist` и файл `package.json` в папку `custom-nodes` вашего n8n сервера.
+1. Copy the contents of the `dist` folder and the `package.json` file to the `custom-nodes` folder of your n8n server.
 
-2. Подключитесь к серверу по SSH.
+2. Connect to the server via SSH.
 
-3. Перейдите в папку `custom-nodes`:
+3. Navigate to the `custom-nodes` folder:
    ```
    cd path/to/custom-nodes
    ```
 
-4. Установите зависимости:
+4. Install dependencies:
    ```
    npm i
    ```
 
-5. Перезапустите контейнер n8n:
+5. Restart the n8n container:
    ```
    docker restart n8n_container_name
    ```

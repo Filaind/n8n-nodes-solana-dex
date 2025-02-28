@@ -1,7 +1,7 @@
 {
-  "name": "n8n-solana-nodes",
+  "name": "n8n-solana-dex-nodes",
   "version": "1.0.0",
-  "description": "Solana nodes for n8n",
+  "description": "Solana DEX nodes for n8n",
   "main": "index.js",
   "scripts": {
     "clean": "rimraf dist",
@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/Filaind/n8n_solana.git"
   },
-  "author": "Ваше имя",
+  "author": "Filaind and AV",
   "license": "MIT",
   "devDependencies": {
     "gulp": "^5.0.0",
