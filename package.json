@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-solana-dex",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Solana DEX nodes for n8n",
   "main": "index.js",
   "scripts": {
@@ -20,12 +20,12 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/SolanaApi.credentials.js"
+      "credentials/SolanaApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Solana/Solana.node.js",
-      "dist/nodes/Jupiter/Jupiter.node.js",
-      "dist/nodes/Meteora/Meteora.node.js"
+      "nodes/Solana/Solana.node.js",
+      "nodes/Jupiter/Jupiter.node.js",
+      "nodes/Meteora/Meteora.node.js"
     ]
   },
   "author": "Filaind and AV",
