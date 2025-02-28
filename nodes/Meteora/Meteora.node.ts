@@ -40,7 +40,7 @@ export class Meteora implements INodeType {
 
         for (let i = 0; i < items.length; i++) {
             const operation = this.getNodeParameter('operation', i) as string;
-            const poolAddress = this.getNodeParameter('poolAddress', i) as string;
+            const poolAddress = (items[i].json['poolAddress'] || this.getNodeParameter('poolAddress', i)) as string; // TODO: do better
             const dlmmPool = await DLMM.create(connection, new PublicKey(poolAddress));
 
             this.helpers.returnJsonArray([])
@@ -49,7 +49,7 @@ export class Meteora implements INodeType {
                     returnData.push(...await getUserPositions(dlmmPool, user.publicKey));
                     break;
                 case 'closePositions':
-                    returnData.push(...await closePositions(dlmmPool, connection, user, this.getInputData()));
+                    returnData.push(...await closePositions(dlmmPool, connection, user, items[i]));
                     break;
                 case 'openPosition':
                     const poolStrategy = this.getNodeParameter('poolStrategy', i) as StrategyType;

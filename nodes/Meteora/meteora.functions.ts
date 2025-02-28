@@ -45,40 +45,37 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
     return returnData;
 }
 
-export async function closePositions(dlmmPool: DLMM, connection: Connection, user: Keypair, inputs: INodeExecutionData[]): Promise<INodeExecutionData[]> {
+export async function closePositions(dlmmPool: DLMM, connection: Connection, user: Keypair, input: INodeExecutionData): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
+    let positions = input.json.positions as unknown as IPositionData | IPositionData[]; // TODO: do better
 
-    for (let input of inputs) {
-        let positions = input.json.positions as unknown as IPositionData | IPositionData[]; // TODO: do better
+    for (let position of Array.isArray(positions) ? positions : [positions]) {
+        const removeLiquidityTx = await dlmmPool.removeLiquidity({
+            position: new PublicKey(position.id),
+            user: user.publicKey,
+            binIds: position.bins, //КАКИЕ БИНЫ ЗАБИРАЕМ
+            bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
+            shouldClaimAndClose: true,
+        });
 
-        for (let position of Array.isArray(positions) ? positions : [positions]) {
-            const removeLiquidityTx = await dlmmPool.removeLiquidity({
-                position: new PublicKey(position.id),
-                user: user.publicKey,
-                binIds: position.bins, //КАКИЕ БИНЫ ЗАБИРАЕМ
-                bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
-                shouldClaimAndClose: true,
+        for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
+            //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+            tx.add(ComputeBudgetProgram.setComputeUnitPrice({
+                microLamports: 100000
+            }));
+
+            const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
+                connection,
+                tx,
+                [user],
+                { skipPreflight: false }
+            );
+
+            returnData.push({
+                json: {
+                    txHash: removeBalanceLiquidityTxHash,
+                },
             });
-
-            for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
-                //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
-                tx.add(ComputeBudgetProgram.setComputeUnitPrice({
-                    microLamports: 100000
-                }));
-
-                const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
-                    connection,
-                    tx,
-                    [user],
-                    { skipPreflight: false }
-                );
-
-                returnData.push({
-                    json: {
-                        txHash: removeBalanceLiquidityTxHash,
-                    },
-                });
-            }
         }
     }
     return returnData;
