@@ -22,21 +22,16 @@ export async function transferSol(connection: Connection, user: Signer, walletAd
     return txHash;
 }
 
-export async function findTokenAccountForMint(connection: Connection, owner: PublicKey, mintAddress: string): Promise<PublicKey | null> {
-    try {
-        const tokenAccounts = await connection.getTokenAccountsByOwner(
-            owner,
-            { mint: new PublicKey(mintAddress) }
-        );
+export async function findTokenAccountForMint(connection: Connection, owner: PublicKey, mintAddress: string): Promise<PublicKey> {
+    const tokenAccounts = await connection.getTokenAccountsByOwner(
+        owner,
+        { mint: new PublicKey(mintAddress) }
+    );
 
-        if (tokenAccounts.value.length > 0) {
-            return tokenAccounts.value[0].pubkey;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error finding token account:", error);
-        return null;
+    if (tokenAccounts.value.length > 0) {
+        return tokenAccounts.value[0].pubkey;
     }
+    throw new Error("Token account not found");
 }
 
 
