@@ -13,10 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: https://registry.npmjs.org/
       - run: npm install
       - run: npm run build
       - name: Authenticate with npm
-        run: npm login --registry=https://registry.npmjs.org/
+        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
       - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
