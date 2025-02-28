@@ -103,8 +103,6 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
     const totalXAmount = new BN(userSolBalance);
     const totalYAmount = new BN(usdcForDeposit);
 
-    console.log(totalXAmount, totalYAmount)
-
     const newBalancePosition = Keypair.generate();
 
     const createPositionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
