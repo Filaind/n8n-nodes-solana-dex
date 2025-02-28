@@ -1,4 +1,4 @@
-import { INodeTypeDescription } from 'n8n-workflow';
+import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 import {
     getBalance,
     transferSol,
@@ -22,8 +22,8 @@ export const solanaNodeDescription: INodeTypeDescription = {
             required: true,
         }
     ],
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     properties: [
         {
             displayName: 'Operation',

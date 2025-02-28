@@ -1,4 +1,4 @@
-import { INodeTypeDescription } from 'n8n-workflow';
+import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 import {
   getQuote,
   swapTokens,
@@ -16,14 +16,14 @@ export const jupiterNodeDescription: INodeTypeDescription = {
   defaults: {
     name: 'Jupiter',
   },
-  inputs: ['main'],
+  inputs: [NodeConnectionType.Main],
   credentials: [
     {
       name: 'solanaApi',
       required: true,
     }
   ],
-  outputs: ['main'],
+  outputs: [NodeConnectionType.Main],
   properties: [
     {
       displayName: 'Operation',

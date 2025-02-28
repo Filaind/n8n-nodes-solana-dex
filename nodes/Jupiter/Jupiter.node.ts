@@ -1,10 +1,10 @@
-import { IExecuteFunctions } from 'n8n-core';
 import {
+  IExecuteFunctions,
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 import bs58 from 'bs58';
 import { jupiterNodeDescription } from './descriptions/jupiter-node-descriptions';
 import { getQuote, swapTokens, getTokenBalances, getRoutes } from './jupiter.functions';

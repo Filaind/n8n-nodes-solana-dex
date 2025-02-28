@@ -1,4 +1,4 @@
-import { INodeTypeDescription } from 'n8n-workflow';
+import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 import {
   getUserPositions,
   closeAllPositions,
@@ -17,14 +17,14 @@ export const meteoraNodeDescription: INodeTypeDescription = {
   defaults: {
     name: 'Meteora',
   },
-  inputs: ['main'],
+  inputs: [NodeConnectionType.Main],
   credentials: [
     {
       name: 'solanaApi',
       required: true,
     }
   ],
-  outputs: ['main'],
+  outputs: [NodeConnectionType.Main],
   properties: [
     {
       displayName: "Operation",

@@ -1,10 +1,10 @@
-import { IExecuteFunctions } from 'n8n-core';
 import {
+  IExecuteFunctions,
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction, Signer } from '@solana/web3.js';
+import { Connection, Keypair} from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getBalance, transferSol, getTokenAccountBalance } from './solana.functions';
 import { solanaNodeDescription } from './descriptions/solana-node-descriptions';
