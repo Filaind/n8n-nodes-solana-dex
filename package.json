@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-solana-dex",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Solana DEX nodes for n8n",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,17 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Filaind/n8n_solana.git"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SolanaApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Solana/Solana.node.js",
+      "dist/nodes/Jupiter/Jupiter.node.js",
+      "dist/nodes/Meteora/Meteora.node.js"
+    ]
   },
   "author": "Filaind and AV",
   "license": "MIT",
