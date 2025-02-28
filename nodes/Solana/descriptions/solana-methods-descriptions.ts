@@ -37,5 +37,10 @@ export const transferSol: INodeProperties[] = [
         default: 0,
         required: true,
         description: 'The amount of LAMPORTS to transfer',
+        displayOptions: {
+            show: {
+                operation: ['transferSol'],
+            },
+        },
     },
 ];

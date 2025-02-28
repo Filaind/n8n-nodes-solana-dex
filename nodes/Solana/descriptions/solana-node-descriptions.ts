@@ -15,6 +15,12 @@ export const solanaNodeDescription: INodeTypeDescription = {
     defaults: {
         name: 'Solana',
     },
+    credentials: [
+        {
+            name: 'solanaApi',
+            required: true,
+        }
+    ],
     inputs: ['main'],
     outputs: ['main'],
     properties: [
