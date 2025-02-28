@@ -1,7 +1,7 @@
 import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 import {
   getUserPositions,
-  closeAllPositions,
+  closePositions,
   openPosition,
   claimAllRewards,
 } from './meteora-methods-descriptions';
@@ -37,9 +37,9 @@ export const meteoraNodeDescription: INodeTypeDescription = {
           description: "Get user positions for a pool address",
         },
         {
-          name: "Close all positions",
-          value: "closeAllPositions",
-          description: "Close all positions",
+          name: "Close positions",
+          value: "closePositions",
+          description: "Close positions",
         },
         {
           name: "Open position",
@@ -58,7 +58,7 @@ export const meteoraNodeDescription: INodeTypeDescription = {
       description: 'Operation to perform',
     },
     ...getUserPositions,
-    ...closeAllPositions,
+    ...closePositions,
     ...openPosition,
     ...claimAllRewards,
   ],

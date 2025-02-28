@@ -17,21 +17,7 @@ export const getUserPositions: INodeProperties[] = [
   },
 ];
 
-export const closeAllPositions: INodeProperties[] = [
-  {
-    displayName: 'Pool Address',
-    name: 'poolAddress',
-    type: 'string',
-    default: '',
-    required: true,
-    description: 'The Meteora pool address to close all positions for',
-    displayOptions: {
-      show: {
-        operation: ['closeAllPositions'],
-      },
-    },
-  },
-];
+export const closePositions: INodeProperties[] = [ ];
 
 export const openPosition: INodeProperties[] = [
   {

@@ -8,6 +8,14 @@ import { findTokenAccountForMint } from "../Solana/solana.functions";
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
+export interface IPositionData {
+    id: string,
+    bins: number[],
+    startPrice?: number,
+    endPrice?: number,
+    xAmount?: number,
+    yAmount?: number
+}
 
 export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
@@ -15,62 +23,62 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
     const activeBin = await dlmmPool.getActiveBin();
     const activeBinPrice = Number(activeBin.pricePerToken);
 
-    for (let userPosition of userPositions) {
-        const position = userPosition;
-        const startPrice = Number(position.positionData.positionBinData[0].pricePerToken);
-        const endPrice = Number(position.positionData.positionBinData[position.positionData.positionBinData.length - 1].pricePerToken);
-        const xAmount = Number(position.positionData.totalXAmount) / 10 ** 9; //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
-        const yAmount = Number(position.positionData.totalYAmount) / 10 ** 6; //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
-
-        returnData.push({
-            json: {
-                startPrice,
-                endPrice,
-                xAmount,
-                yAmount,
-                activeBinPrice,
-            },
-        });
-    }
-
+    const positions = userPositions.map((position) => {
+        let positionData: IPositionData = {
+            id: position.publicKey.toBase58(),
+            bins: position.positionData.positionBinData.map((bin) => bin.binId),
+            startPrice: Number(position.positionData.positionBinData[0].pricePerToken),
+            endPrice: Number(position.positionData.positionBinData[position.positionData.positionBinData.length - 1].pricePerToken),
+            xAmount: Number(position.positionData.totalXAmount) / 10 ** 9, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
+            yAmount: Number(position.positionData.totalYAmount) / 10 ** 6, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
+        }
+        positionData
+    })
+    
+    returnData.push({
+        json: {
+            poolAddress: dlmmPool.pubkey.toBase58(),
+            activeBinPrice: activeBinPrice,
+            positions: positions
+        },
+    });
     return returnData;
 }
 
-export async function closeAllPositions(dlmmPool: DLMM, connection: Connection, user: Keypair): Promise<INodeExecutionData[]> {
+export async function closePositions(dlmmPool: DLMM, connection: Connection, user: Keypair, inputs: INodeExecutionData[]): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
-    const { userPositions } = await dlmmPool.getPositionsByUserAndLbPair(user.publicKey);
 
-    for (let userPosition of userPositions) {
-        const binIdsToRemove = userPosition.positionData.positionBinData.map(
-            (bin) => bin.binId
-        );
-        const removeLiquidityTx = await dlmmPool.removeLiquidity({
-            position: userPosition.publicKey,
-            user: user.publicKey,
-            binIds: binIdsToRemove, //КАКИЕ БИНЫ ЗАБИРАЕМ
-            bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
-            shouldClaimAndClose: true,
-        });
+    for (let input of inputs) {
+        let positions = input.json.positions as unknown as IPositionData | IPositionData[]; // TODO: do better
 
-        for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
-
-            //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
-            tx.add(ComputeBudgetProgram.setComputeUnitPrice({
-                microLamports: 100000
-            }));
-
-            const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
-                connection,
-                tx,
-                [user],
-                { skipPreflight: false }
-            );
-
-            returnData.push({
-                json: {
-                    txHash: removeBalanceLiquidityTxHash,
-                },
+        for (let position of Array.isArray(positions) ? positions : [positions]) {
+            const removeLiquidityTx = await dlmmPool.removeLiquidity({
+                position: new PublicKey(position.id),
+                user: user.publicKey,
+                binIds: position.bins, //КАКИЕ БИНЫ ЗАБИРАЕМ
+                bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
+                shouldClaimAndClose: true,
             });
+
+            for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
+                //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+                tx.add(ComputeBudgetProgram.setComputeUnitPrice({
+                    microLamports: 100000
+                }));
+
+                const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
+                    connection,
+                    tx,
+                    [user],
+                    { skipPreflight: false }
+                );
+
+                returnData.push({
+                    json: {
+                        txHash: removeBalanceLiquidityTxHash,
+                    },
+                });
+            }
         }
     }
     return returnData;
@@ -94,6 +102,7 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
     userSolBalance -= LAMPORTS_PER_SOL * 0.06;
 
     const activeBin = await dlmmPool.getActiveBin();
+    const activeBinPrice = Number(activeBin.pricePerToken);
     const minBinId = activeBin.binId - minBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
     const maxBinId = activeBin.binId + maxBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
@@ -126,8 +135,16 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
         [user, newBalancePosition]
     );
 
+    let positionData: IPositionData = {
+        id: newBalancePosition.publicKey.toBase58(),
+        bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+    }
+
     returnData.push({
         json: {
+            poolAddress: dlmmPool.pubkey.toBase58(),
+            activeBinPrice: activeBinPrice,
+            positions: positionData,
             txHash: createBalancePositionTxHash,
         },
     });

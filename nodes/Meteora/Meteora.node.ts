@@ -8,12 +8,24 @@ import DLMM, { StrategyType } from "@meteora-ag/dlmm";
 import bs58 from 'bs58';
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { meteoraNodeDescription } from './descriptions/meteora-node-decriptions';
-import { getUserPositions, closeAllPositions, openPosition, claimAllRewards } from './meteora.functions';
+import { IPositionData, getUserPositions, closePositions, openPosition, claimAllRewards } from './meteora.functions';
 
 
 export class Meteora implements INodeType {
     description: INodeTypeDescription = meteoraNodeDescription
 
+    async getDLMM(this: IExecuteFunctions, connection: Connection, poolAddress: string): Promise<DLMM> {
+        let staticData = this.getWorkflowStaticData("global");
+        let dlmmPools = staticData["meteora"] as {[key: string]: DLMM} || {}
+        let dlmmPool = dlmmPools[poolAddress];
+        if (dlmmPool) {
+            return dlmmPool;
+        }
+        dlmmPool = await DLMM.create(connection, new PublicKey(poolAddress));
+        dlmmPools[poolAddress] = dlmmPool;
+        staticData["meteora"] = dlmmPools
+        return dlmmPool;
+    }
 
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const credentials = await this.getCredentials('solanaApi');
@@ -31,13 +43,13 @@ export class Meteora implements INodeType {
             const poolAddress = this.getNodeParameter('poolAddress', i) as string;
             const dlmmPool = await DLMM.create(connection, new PublicKey(poolAddress));
 
-
+            this.helpers.returnJsonArray([])
             switch (operation) {
                 case 'getUserPositions':
                     returnData.push(...await getUserPositions(dlmmPool, user.publicKey));
                     break;
-                case 'closeAllPositions':
-                    returnData.push(...await closeAllPositions(dlmmPool, connection, user));
+                case 'closePositions':
+                    returnData.push(...await closePositions(dlmmPool, connection, user, this.getInputData()));
                     break;
                 case 'openPosition':
                     const poolStrategy = this.getNodeParameter('poolStrategy', i) as StrategyType;
