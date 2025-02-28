@@ -1,5 +1,5 @@
 {
-  "name": "n8n-solana-dex-nodes",
+  "name": "n8n-nodes-solana-dex",
   "version": "1.0.0",
   "description": "Solana DEX nodes for n8n",
   "main": "index.js",
