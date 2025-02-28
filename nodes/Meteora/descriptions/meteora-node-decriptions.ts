@@ -10,6 +10,7 @@ import {
 export const meteoraNodeDescription: INodeTypeDescription = {
   displayName: 'Meteora DLLM',
   name: 'meteora',
+  icon: 'file:logo.svg',
   group: ['blockchain'],
   version: 1,
   description: 'Meteora DLLM operations',

@@ -8,6 +8,7 @@ import {
 export const solanaNodeDescription: INodeTypeDescription = {
     displayName: 'Solana',
     name: 'solana',
+    icon: 'file:logo.svg',
     group: ['blockchain'],
     version: 1,
     description: 'Solana blockchain operations',
