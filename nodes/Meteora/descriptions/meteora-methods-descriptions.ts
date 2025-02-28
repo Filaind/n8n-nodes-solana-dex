@@ -58,10 +58,32 @@ export const openPosition: INodeProperties[] = [
         operation: ['openPosition'],
       },
     },
-    options: Object.keys(StrategyType).map((strategy) => ({
-      name: strategy,
-      value: Object.values(StrategyType)[Object.keys(StrategyType).indexOf(strategy)],
-    })),
+    options: [
+      {
+        name: 'SpotImBalanced',
+        value: StrategyType.SpotImBalanced,
+      },
+      {
+        name: 'CurveImBalanced',
+        value: StrategyType.CurveImBalanced,
+      },
+      {
+        name: 'BidAskImBalanced',
+        value: StrategyType.BidAskImBalanced,
+      },
+      {
+        name: 'SpotBalanced',
+        value: StrategyType.SpotBalanced,
+      },
+      {
+        name: 'CurveBalanced',
+        value: StrategyType.CurveBalanced,
+      },
+      {
+        name: 'BidAskBalanced',
+        value: StrategyType.BidAskBalanced,
+      },
+    ],
     description: 'The Meteora pool strategy to get info for',
   }
 ];
