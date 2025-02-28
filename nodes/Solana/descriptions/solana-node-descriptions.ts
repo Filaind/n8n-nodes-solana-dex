@@ -2,6 +2,7 @@ import { INodeTypeDescription } from 'n8n-workflow';
 import {
     getBalance,
     transferSol,
+    getTokenAccountBalance,
 } from './solana-methods-descriptions';
 
 
@@ -52,5 +53,6 @@ export const solanaNodeDescription: INodeTypeDescription = {
         },
         ...getBalance,
         ...transferSol,
+        ...getTokenAccountBalance,
     ],
 };
