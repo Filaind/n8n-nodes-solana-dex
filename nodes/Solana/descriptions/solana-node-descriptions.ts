@@ -39,6 +39,11 @@ export const solanaNodeDescription: INodeTypeDescription = {
                     value: 'transferSol',
                     description: 'Transfer SOL to a wallet address',
                 },
+                {
+                    name: 'Get Token Account Balance',
+                    value: 'getTokenAccountBalance',
+                    description: 'Get token account balance for a wallet address and mint address',
+                },
             ],
             default: 'getBalance',
             noDataExpression: true,

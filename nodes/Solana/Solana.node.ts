@@ -6,7 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction, Signer } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { getBalance, transferSol } from './solana.functions';
+import { getBalance, transferSol, getTokenAccountBalance } from './solana.functions';
 import { solanaNodeDescription } from './descriptions/solana-node-descriptions';
 
 
@@ -39,6 +39,12 @@ export class Solana implements INodeType {
 
           const txHash = await transferSol(connection, user, walletAddressTo, amount);
           returnData.push({ json: { txHash } });
+          break;
+        case 'getTokenAccountBalance':
+          const mintAddress = this.getNodeParameter('mintAddress', i) as string;
+          const walletAddress = this.getNodeParameter('walletAddress', i) as string;
+          const tokenAccountBalance = await getTokenAccountBalance(connection, mintAddress, walletAddress);
+          returnData.push({ json: { tokenAccountBalance } });
           break;
       }
     }

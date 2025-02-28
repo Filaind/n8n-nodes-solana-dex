@@ -19,13 +19,6 @@
   },
   "author": "Ваше имя",
   "license": "MIT",
-  "n8n": {
-    "nodes": [
-      "dist/nodes/Solana/Solana.node.js",
-      "dist/nodes/Solana/Meteora.node.js",
-      "dist/credentials/Solana/SolanaApi.credentials.js"
-    ]
-  },
   "devDependencies": {
     "gulp": "^5.0.0",
     "n8n-workflow": "^0.x.0",

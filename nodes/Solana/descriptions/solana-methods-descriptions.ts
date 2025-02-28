@@ -44,3 +44,33 @@ export const transferSol: INodeProperties[] = [
         },
     },
 ];
+
+
+export const getTokenAccountBalance: INodeProperties[] = [
+    {
+        displayName: 'Mint Address',
+        name: 'mintAddress',
+        type: 'string',
+        default: '',
+        required: true,
+        description: 'The Solana mint address to get the balance for',
+        displayOptions: {
+            show: {
+                operation: ['getTokenAccountBalance'],
+            },
+        },
+    },
+    {
+        displayName: 'Wallet Address',
+        name: 'walletAddress',
+        type: 'string',
+        default: '',
+        required: true,
+        description: 'The Solana wallet address to get the balance for',
+        displayOptions: {
+            show: {
+                operation: ['getTokenAccountBalance'],
+            },
+        },
+    },
+];

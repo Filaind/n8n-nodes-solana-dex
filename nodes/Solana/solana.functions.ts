@@ -38,3 +38,13 @@ export async function findTokenAccountForMint(connection: Connection, owner: Pub
         return null;
     }
 }
+
+
+export async function getTokenAccountBalance(connection: Connection, mintAddress: string, walletAddress: string): Promise<number> {
+    const tokenAccount = await findTokenAccountForMint(connection, new PublicKey(walletAddress), mintAddress);
+    if (!tokenAccount) {
+        return 0;
+    }
+    const tokenAccountBalance = await connection.getTokenAccountBalance(tokenAccount);
+    return Number(tokenAccountBalance.value.amount);
+}
