@@ -86,12 +86,15 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
     }
 
     const usdcUserBalance = await connection.getTokenAccountBalance(usdcTokenAccount);
-    const usdcForDeposit = Number(usdcUserBalance.value.amount) / 10 ** 6;
+    const usdcForDeposit = Number(usdcUserBalance.value.amount);
 
 
-    //ОСТАВИТЬ 0.01 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
-    userSolBalance -= LAMPORTS_PER_SOL * 0.01;
+    //ОСТАВИТЬ 0.02 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
+    userSolBalance -= LAMPORTS_PER_SOL * 0.02;
     userSolBalance -= LAMPORTS_PER_SOL * 0.06;
+    if(userSolBalance < 0) {
+        userSolBalance = 0
+    }
 
     const activeBin = await dlmmPool.getActiveBin();
     const minBinId = activeBin.binId - minBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
@@ -99,6 +102,8 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
 
     const totalXAmount = new BN(userSolBalance);
     const totalYAmount = new BN(usdcForDeposit);
+
+    console.log(totalXAmount, totalYAmount)
 
     const newBalancePosition = Keypair.generate();
 
