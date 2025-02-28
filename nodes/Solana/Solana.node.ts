@@ -4,7 +4,43 @@ import {
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction, Signer } from '@solana/web3.js';
+import bs58 from 'bs58';
+
+export async function getBalance(connection: Connection, wallet: string): Promise<{ wallet: string, balanceInLamports: number, balance: number }> {
+  const publicKey = new PublicKey(wallet);
+  const balanceInLamports = await connection.getBalance(publicKey);
+  return {
+    wallet: wallet,
+    balanceInLamports: balanceInLamports,
+    balance: balanceInLamports / LAMPORTS_PER_SOL,
+  };
+}
+
+export async function transferSol(connection: Connection, user: Signer, toWallet: string, amount: number): Promise<string> {
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({ fromPubkey: user.publicKey, toPubkey: new PublicKey(toWallet), lamports: amount })
+  );
+  const txHash = await sendAndConfirmTransaction(connection, transaction, [user]);
+  return txHash;
+}
+
+export async function findTokenAccountForMint(connection: Connection, owner: PublicKey, mintAddress: string): Promise<PublicKey | null> {
+  try {
+    const tokenAccounts = await connection.getTokenAccountsByOwner(
+      owner,
+      { mint: new PublicKey(mintAddress) }
+    );
+
+    if (tokenAccounts.value.length > 0) {
+      return tokenAccounts.value[0].pubkey;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error finding token account:", error);
+    return null;
+  }
+}
 
 export class Solana implements INodeType {
   description: INodeTypeDescription = {
@@ -81,56 +117,29 @@ export class Solana implements INodeType {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
 
+    const credentials = await this.getCredentials('solanaApi');
+    const connection = new Connection(credentials.rpcUrl as string, {
+      commitment: "confirmed",
+      wsEndpoint: credentials.wsEndpoint as string
+    });
+
+    const user = Keypair.fromSecretKey(bs58.decode(credentials.privateKey as string));
+
     for (let i = 0; i < items.length; i++) {
       const operation = this.getNodeParameter('operation', i) as string;
-      
-      if (operation === 'getBalance') {
-        const walletAddress = this.getNodeParameter('walletAddress', i) as string;
-        const network = this.getNodeParameter('network', i) as 'mainnet-beta' | 'testnet' | 'devnet';
-        
-        try {
-          // Connect to the Solana network
-          const connection = new Connection(clusterApiUrl(network));
-          
-          // Create a PublicKey object from the wallet address
-          const publicKey = new PublicKey(walletAddress);
-          
-          // Get the balance in lamports
-          const balanceInLamports = await connection.getBalance(publicKey);
-          
-          // Convert lamports to SOL
-          const balanceInSOL = balanceInLamports / LAMPORTS_PER_SOL;
-          
-          const newItem: INodeExecutionData = {
-            json: {
-              walletAddress,
-              network,
-              balanceInLamports,
-              balanceInSOL,
-              formattedBalance: `${balanceInSOL} SOL`,
-            },
-          };
-          
-          returnData.push(newItem);
-        } catch (error) {
-          if (error instanceof Error) {
-            const newItem: INodeExecutionData = {
-              json: {
-                error: true,
-                message: error.message,
-              },
-            };
-            returnData.push(newItem);
-          } else {
-            const newItem: INodeExecutionData = {
-              json: {
-                error: true,
-                message: 'An unknown error occurred',
-              },
-            };
-            returnData.push(newItem);
-          }
-        }
+
+      switch (operation) {
+        case 'getBalance':
+          const balance = await getBalance(connection, user.publicKey.toBase58());
+          returnData.push({ json: { balance } });
+          break;
+        case 'transferSol':
+          const amount = this.getNodeParameter('amount', i) as number;
+          const toWallet = this.getNodeParameter('toWallet', i) as string;
+
+          const txHash = await transferSol(connection, user, toWallet, amount);
+          returnData.push({ json: { txHash } });
+          break;
       }
     }
 
