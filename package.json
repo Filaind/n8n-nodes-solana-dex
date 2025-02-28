@@ -4,7 +4,8 @@
   "description": "Solana nodes for n8n",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
     "dev": "tsc --watch"
   },
   "keywords": [
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "n8n-workflow": "^0.x.0",
+    "rimraf": "^6.0.1",
     "typescript": "~4.9.5"
   },
   "dependencies": {

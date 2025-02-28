@@ -50,9 +50,10 @@ export const openPosition: INodeProperties[] = [
   {
     displayName: 'Pool strategy',
     name: 'poolStrategy',
-    type: 'string',
+    type: 'options',
     default: StrategyType.SpotImBalanced,
-    required: false,
+    required: true,
+    noDataExpression: true,
     displayOptions: {
       show: {
         operation: ['openPosition'],
@@ -62,26 +63,32 @@ export const openPosition: INodeProperties[] = [
       {
         name: 'SpotImBalanced',
         value: StrategyType.SpotImBalanced,
+        description: 'Spot imbalanced',
       },
       {
         name: 'CurveImBalanced',
         value: StrategyType.CurveImBalanced,
+        description: 'Curve imbalanced',
       },
       {
         name: 'BidAskImBalanced',
         value: StrategyType.BidAskImBalanced,
+        description: 'Bid-ask imbalanced',
       },
       {
         name: 'SpotBalanced',
         value: StrategyType.SpotBalanced,
+        description: 'Auto-balanced spot',
       },
       {
         name: 'CurveBalanced',
         value: StrategyType.CurveBalanced,
+        description: 'Auto-balanced curve',
       },
       {
         name: 'BidAskBalanced',
         value: StrategyType.BidAskBalanced,
+        description: 'Auto-balanced bid-ask',
       },
     ],
     description: 'The Meteora pool strategy to get info for',
@@ -89,3 +96,18 @@ export const openPosition: INodeProperties[] = [
 ];
 
 
+export const claimAllRewards: INodeProperties[] = [
+  {
+    displayName: 'Pool Address',
+    name: 'poolAddress',
+    type: 'string',
+    default: '',
+    required: true,
+    description: 'The Meteora pool address to claim all rewards for',
+    displayOptions: {
+      show: {
+        operation: ['claimAllRewards'],
+      },
+    },
+  },
+];

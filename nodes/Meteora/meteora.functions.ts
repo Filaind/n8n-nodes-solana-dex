@@ -65,7 +65,7 @@ export async function closeAllPositions(dlmmPool: DLMM, connection: Connection, 
 
                 //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
                 tx.add(ComputeBudgetProgram.setComputeUnitPrice({
-                    microLamports: 1000000
+                    microLamports: 10000
                 }));
 
                 const removeBalanceLiquidityTxHash = await sendAndConfirmTransaction(
@@ -96,7 +96,7 @@ export async function closeAllPositions(dlmmPool: DLMM, connection: Connection, 
 export async function openPosition(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
     try {
-        const userSolBalance = await connection.getBalance(user.publicKey);
+        let userSolBalance = await connection.getBalance(user.publicKey);
         const usdcTokenAccount = await findTokenAccountForMint(connection, user.publicKey, USDC_MINT_ADDRESS);
 
         if (!usdcTokenAccount) {
@@ -110,7 +110,11 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
         const minBinId = activeBin.binId - 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
         const maxBinId = activeBin.binId + 33; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
-        const totalXAmount = new BN(userSolBalance * 0.9); //ОСТАВИТЬ 0.01 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
+        //ОСТАВИТЬ 0.01 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
+        userSolBalance -= LAMPORTS_PER_SOL * 0.01;
+        userSolBalance -= LAMPORTS_PER_SOL * 0.06;
+
+        const totalXAmount = new BN(userSolBalance);
         const totalYAmount = new BN(usdcForDeposit);
 
         const newBalancePosition = Keypair.generate();
@@ -130,7 +134,7 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
 
         //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
         createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 1000000
+            microLamports: 10000
         }));
 
         const createBalancePositionTxHash = await sendAndConfirmTransaction(
@@ -144,6 +148,51 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
                 txHash: createBalancePositionTxHash,
             },
         });
+    } catch (error) {
+        returnData.push({
+            json: {
+                error: true,
+                message: JSON.stringify(error),
+            },
+        });
+    }
+    return returnData;
+}
+
+export async function claimAllRewards(dlmmPool: DLMM, connection: Connection, user: Keypair): Promise<INodeExecutionData[]> {
+    const returnData: INodeExecutionData[] = [];
+    try {
+        const { userPositions } = await dlmmPool.getPositionsByUserAndLbPair(user.publicKey);
+
+        for (let userPosition of userPositions) {
+            
+            const claimRewardsTx = await dlmmPool.claimAllRewardsByPosition({
+                owner: user.publicKey,
+                position: userPosition,
+            });
+
+            for (let tx of Array.isArray(claimRewardsTx) ? claimRewardsTx : [claimRewardsTx]) {
+
+                //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+                tx.add(ComputeBudgetProgram.setComputeUnitPrice({
+                    microLamports: 10000
+                }));
+
+                const claimRewardsTxHash = await sendAndConfirmTransaction(
+                    connection,
+                    tx,
+                    [user],
+                    { skipPreflight: true }
+                );
+
+                returnData.push({
+                    json: {
+                        txHash: claimRewardsTxHash,
+                    },
+                });
+            }
+        }
+
     } catch (error) {
         returnData.push({
             json: {

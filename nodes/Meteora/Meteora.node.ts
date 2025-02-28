@@ -4,11 +4,11 @@ import {
     INodeType,
     INodeTypeDescription,
 } from 'n8n-workflow';
-import DLMM, { StrategyType } from "@meteora-ag/dlmm";  
+import DLMM, { StrategyType } from "@meteora-ag/dlmm";
 import bs58 from 'bs58';
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { meteoraNodeDescription } from './descriptions/meteora-node-decriptions';
-import { getUserPositions, closeAllPositions, openPosition } from './meteora.functions';
+import { getUserPositions, closeAllPositions, openPosition, claimAllRewards } from './meteora.functions';
 
 
 export class Meteora implements INodeType {
@@ -42,6 +42,9 @@ export class Meteora implements INodeType {
                 case 'openPosition':
                     const poolStrategy = this.getNodeParameter('poolStrategy', i) as StrategyType;
                     returnData.push(...await openPosition(dlmmPool, connection, user, poolStrategy));
+                    break;
+                case 'claimAllRewards':
+                    returnData.push(...await claimAllRewards(dlmmPool, connection, user));
                     break;
             }
         }
