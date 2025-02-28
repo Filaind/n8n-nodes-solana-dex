@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { INodeExecutionData } from "n8n-workflow";
 import BN from "bn.js";
 import { ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, sendAndConfirmTransaction } from "@solana/web3.js";
-import { findTokenAccountForMint } from "../Solana/Solana.node";
+import { findTokenAccountForMint } from "../Solana/solana.functions";
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
