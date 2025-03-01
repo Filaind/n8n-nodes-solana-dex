@@ -32,7 +32,7 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
             xAmount: Number(position.positionData.totalXAmount) / 10 ** 9, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
             yAmount: Number(position.positionData.totalYAmount) / 10 ** 6, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
         }
-        positionData
+        return positionData;
     })
     
     returnData.push({
@@ -47,6 +47,8 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
 
 export async function closePositions(dlmmPool: DLMM, connection: Connection, user: Keypair, input: INodeExecutionData): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
+    const txHashes:string[] = [];
+
     let positions = input.json.positions as unknown as IPositionData | IPositionData[]; // TODO: do better
 
     for (let position of Array.isArray(positions) ? positions : [positions]) {
@@ -57,6 +59,7 @@ export async function closePositions(dlmmPool: DLMM, connection: Connection, use
             bps: new BN(100 * 100), //ЗАБИРАЕМ 100% ИЗ ВЫБРАННЫХ БИНОВ
             shouldClaimAndClose: true,
         });
+
 
         for (let tx of Array.isArray(removeLiquidityTx) ? removeLiquidityTx : [removeLiquidityTx]) {
             //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
@@ -71,13 +74,18 @@ export async function closePositions(dlmmPool: DLMM, connection: Connection, use
                 { skipPreflight: false }
             );
 
-            returnData.push({
-                json: {
-                    txHash: removeBalanceLiquidityTxHash,
-                },
-            });
+            txHashes.push(removeBalanceLiquidityTxHash)
         }
     }
+
+    returnData.push({
+        json: {
+            poolAddress: input.json.poolAddress,
+            activeBinPrice: input.json.activeBinPrice,
+            positions: positions,
+            txHashes: txHashes
+        },
+    });
     return returnData;
 }
 
