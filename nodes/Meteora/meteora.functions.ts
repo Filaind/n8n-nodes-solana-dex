@@ -143,6 +143,10 @@ export async function claimAllRewards(dlmmPool: DLMM, connection: Connection, us
 
     for (let userPosition of userPositions) {
 
+        if(userPosition.positionData.feeX.isZero() && userPosition.positionData.feeY.isZero()) {
+            continue
+        }
+
         const claimRewardsTx = await dlmmPool.claimAllRewardsByPosition({
             owner: user.publicKey,
             position: userPosition,
