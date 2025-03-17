@@ -1,4 +1,4 @@
-import { StrategyType } from "@meteora-ag/dlmm";
+import { PositionBinData, StrategyType } from "@meteora-ag/dlmm";
 import DLMM from "@meteora-ag/dlmm";
 import { PublicKey } from "@solana/web3.js";
 import { INodeExecutionData } from "n8n-workflow";
@@ -12,9 +12,23 @@ export interface IPositionData {
     id: string,
     bins: number[],
     startPrice?: number,
+    avgPrice?: number,
     endPrice?: number,
     xAmount?: number,
     yAmount?: number
+}
+
+function calcAvgPrice(positions: PositionBinData[]): number {
+	let totalSOL = 0;
+	let totalUSDT = 0;
+	positions.forEach((e) => {
+		let ppt = Number(e.pricePerToken);
+		let sol = Number(e.positionXAmount) / 10 ** 9;
+		let usdc = Number(e.positionYAmount) / 10 ** 6;
+		totalSOL += sol + usdc / ppt;
+		totalUSDT += usdc + sol * ppt;
+	});
+	return totalUSDT / totalSOL;
 }
 
 export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise<INodeExecutionData[]> {
@@ -28,6 +42,7 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
             id: position.publicKey.toBase58(),
             bins: position.positionData.positionBinData.map((bin) => bin.binId),
             startPrice: Number(position.positionData.positionBinData[0].pricePerToken),
+            avgPrice: calcAvgPrice(position.positionData.positionBinData),
             endPrice: Number(position.positionData.positionBinData[position.positionData.positionBinData.length - 1].pricePerToken),
             xAmount: Number(position.positionData.totalXAmount) / 10 ** 9, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
             yAmount: Number(position.positionData.totalYAmount) / 10 ** 6, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
