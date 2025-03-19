@@ -104,18 +104,24 @@ export async function closePositions(dlmmPool: DLMM, connection: Connection, use
     return returnData;
 }
 
-export async function openPosition(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType, minBinIdOffset: number, maxBinIdOffset: number): Promise<INodeExecutionData[]> {
+export async function openPosition(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType, amountUSDC: number, amountSOL: number, minBinIdOffset: number, maxBinIdOffset: number): Promise<INodeExecutionData[]> {
     const returnData: INodeExecutionData[] = [];
-    let userSolBalance = await connection.getBalance(user.publicKey);
-    const usdcTokenAccount = await findTokenAccountForMint(connection, user.publicKey, USDC_MINT_ADDRESS);
-
-    if (!usdcTokenAccount) {
-        throw new Error("USDC token account not found for this user");
+    let userSolBalance = 0;
+    if (amountSOL && amountSOL > 0) {
+        userSolBalance = await connection.getBalance(user.publicKey) * (amountSOL / 100);
     }
 
-    const usdcUserBalance = await connection.getTokenAccountBalance(usdcTokenAccount);
-    const usdcForDeposit = Number(usdcUserBalance.value.amount);
+    let userUsdcBalance = 0;
+    if (amountUSDC && amountUSDC > 0) {
+        const usdcTokenAccount = await findTokenAccountForMint(connection, user.publicKey, USDC_MINT_ADDRESS);
+    
+        if (!usdcTokenAccount) {
+            throw new Error("USDC token account not found for this user");
+        }
 
+        const tokenAmount = await connection.getTokenAccountBalance(usdcTokenAccount);
+        userUsdcBalance = Number(tokenAmount.value.amount) * (amountUSDC / 100);
+    }
 
     //ОСТАВИТЬ 0.02 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
     userSolBalance -= LAMPORTS_PER_SOL * 0.02;
@@ -130,7 +136,126 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
     const maxBinId = activeBin.binId + maxBinIdOffset; //ВЫЧИСЛИТЬ ОФФСЕТ НА ОСНОВЕ КОЛИЧЕСТВА ТОКЕНОВ В АККАУНТЕ ЮЗЕРА
 
     const totalXAmount = new BN(userSolBalance);
-    const totalYAmount = new BN(usdcForDeposit);
+    const totalYAmount = new BN(userUsdcBalance);
+
+    const newBalancePosition = Keypair.generate();
+
+    const createPositionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
+        positionPubKey: newBalancePosition.publicKey,
+        user: user.publicKey,
+        totalXAmount,
+        totalYAmount,
+        slippage: 0.1,
+        strategy: {
+            maxBinId,
+            minBinId,
+            strategyType: poolStrategy,
+        },
+    });
+
+    //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+    createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 100000
+    }));
+
+    const createBalancePositionTxHash = await sendAndConfirmTransaction(
+        connection,
+        createPositionTx,
+        [user, newBalancePosition]
+    );
+
+    let positionData: IPositionData = {
+        id: newBalancePosition.publicKey.toBase58(),
+        bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+    }
+
+    returnData.push({
+        json: {
+            poolAddress: dlmmPool.pubkey.toBase58(),
+            activeBinPrice: activeBinPrice,
+            positions: positionData,
+            txHash: createBalancePositionTxHash,
+        },
+    });
+    return returnData;
+}
+
+export async function openPositionAtPrice(dlmmPool: DLMM, connection: Connection, user: Keypair, poolStrategy: StrategyType, amountUSDC: number, amountSOL: number, avgPrice: number): Promise<INodeExecutionData[]> {
+    const returnData: INodeExecutionData[] = [];
+    let userSolBalance = 0;
+    if (amountSOL && amountSOL > 0) {
+        userSolBalance = await connection.getBalance(user.publicKey) * (amountSOL / 100);
+
+        //ОСТАВИТЬ 0.02 SOL НА ТРАНЗАКЦИИ и 0.06 SOL НА ОТКРЫТИЕ ПОЗИЦИИ
+        userSolBalance -= LAMPORTS_PER_SOL * 0.02;
+        userSolBalance -= LAMPORTS_PER_SOL * 0.06;
+        if(userSolBalance < 0) {
+            userSolBalance = 0
+        }
+    }
+
+    let userUsdcBalance = 0;
+    if (amountUSDC && amountUSDC > 0) {
+        const usdcTokenAccount = await findTokenAccountForMint(connection, user.publicKey, USDC_MINT_ADDRESS);
+    
+        if (!usdcTokenAccount) {
+            throw new Error("USDC token account not found for this user");
+        }
+
+        const tokenAmount = await connection.getTokenAccountBalance(usdcTokenAccount);
+        userUsdcBalance = Number(tokenAmount.value.amount) * (amountUSDC / 100);
+    }
+
+    const activeBinLiq = await dlmmPool.getActiveBin();
+    const activeBinPrice = Number(activeBinLiq.pricePerToken);
+
+    let diffPrice = activeBinPrice - avgPrice;
+    let minPrice = activeBinPrice;
+    let maxPrice = activeBinPrice;
+
+    switch (poolStrategy) {
+        default: // spot
+            if (diffPrice > 0) {
+                minPrice -= diffPrice * 2;
+            } else {
+                maxPrice -= diffPrice * 2;
+            }
+            break;
+        case StrategyType.CurveBalanced:
+        case StrategyType.SpotImBalanced:
+            if (diffPrice > 0) {
+                minPrice -= diffPrice * (1 + 1/Math.SQRT2);
+            } else {
+                maxPrice -= diffPrice * (1 + 1/Math.SQRT2)
+            }
+            break;
+        case StrategyType.BidAskBalanced:
+        case StrategyType.BidAskImBalanced:
+            if (diffPrice > 0) {
+                minPrice -= diffPrice * (2 - 1/Math.SQRT2);
+            } else {
+                maxPrice -= diffPrice * (2 - 1/Math.SQRT2)
+            }
+            break;
+    }
+
+    const {activeBin, bins} = await dlmmPool.getBinsBetweenMinAndMaxPrice(minPrice / 1000, maxPrice / 1000);
+    const binIds = bins.map((e) => e.binId)
+
+    let minBinId = Math.min(...binIds);
+    let maxBinId = Math.max(...binIds);
+    if ((maxBinId - minBinId) >= 69) {
+        if (diffPrice > 0) {
+            maxBinId--;
+            minBinId = maxBinId - 68;
+        } else {
+            minBinId++;
+            maxBinId = minBinId + 68;
+        }
+    }
+
+    const totalXAmount = new BN(userSolBalance);
+    const totalYAmount = new BN(userUsdcBalance);
 
     const newBalancePosition = Keypair.generate();
 

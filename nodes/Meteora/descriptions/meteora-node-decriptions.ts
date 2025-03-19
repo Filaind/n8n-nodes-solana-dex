@@ -3,6 +3,7 @@ import {
   getUserPositions,
   closePositions,
   openPosition,
+  openPositionAtPrice,
   claimAllRewards,
 } from './meteora-methods-descriptions';
 
@@ -47,6 +48,11 @@ export const meteoraNodeDescription: INodeTypeDescription = {
           description: "Open a position",
         },
         {
+          name: "Open position at price",
+          value: "openPositionAtPrice",
+          description: "Open a position at price",
+        },
+        {
           name: "Claim all rewards",
           value: "claimAllRewards",
           description: "Claim all rewards",
@@ -60,6 +66,7 @@ export const meteoraNodeDescription: INodeTypeDescription = {
     ...getUserPositions,
     ...closePositions,
     ...openPosition,
+    ...openPositionAtPrice,
     ...claimAllRewards,
   ],
 };

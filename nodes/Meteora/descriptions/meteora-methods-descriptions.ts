@@ -80,6 +80,30 @@ export const openPosition: INodeProperties[] = [
     description: 'The Meteora pool strategy to get info for',
   },
   {
+    displayName: 'Amount of USDC to deposit in %',
+    name: 'amountUsdc',
+    type: 'number',
+    default: 100,
+    required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPosition'],
+      },
+    },
+  },
+  {
+    displayName: 'Amount of SOL to deposit in %',
+    name: 'amountSol',
+    type: 'number',
+    default: 100,
+    required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPosition'],
+      },
+    },
+  },
+  {
     displayName: 'Min Bin Id Offset',
     name: 'minBinIdOffset',
     type: 'number',
@@ -100,6 +124,104 @@ export const openPosition: INodeProperties[] = [
     displayOptions: {
       show: {
         operation: ['openPosition'],
+      },
+    },
+  }
+];
+
+export const openPositionAtPrice: INodeProperties[] = [
+  {
+    displayName: 'Pool Address',
+    name: 'poolAddress',
+    type: 'string',
+    default: '',
+    required: true,
+    description: 'The Meteora pool address to open a position for',
+    displayOptions: {
+      show: {
+        operation: ['openPositionAtPrice'],
+      },
+    },
+  },
+  {
+    displayName: 'Pool strategy',
+    name: 'poolStrategy',
+    type: 'options',
+    default: StrategyType.SpotImBalanced,
+    required: true,
+    noDataExpression: true,
+    displayOptions: {
+      show: {
+        operation: ['openPositionAtPrice'],
+      },
+    },
+    options: [
+      {
+        name: 'SpotImBalanced',
+        value: StrategyType.SpotImBalanced,
+        description: 'Spot imbalanced',
+      },
+      {
+        name: 'CurveImBalanced',
+        value: StrategyType.CurveImBalanced,
+        description: 'Curve imbalanced',
+      },
+      {
+        name: 'BidAskImBalanced',
+        value: StrategyType.BidAskImBalanced,
+        description: 'Bid-ask imbalanced',
+      },
+      {
+        name: 'SpotBalanced',
+        value: StrategyType.SpotBalanced,
+        description: 'Auto-balanced spot',
+      },
+      {
+        name: 'CurveBalanced',
+        value: StrategyType.CurveBalanced,
+        description: 'Auto-balanced curve',
+      },
+      {
+        name: 'BidAskBalanced',
+        value: StrategyType.BidAskBalanced,
+        description: 'Auto-balanced bid-ask',
+      },
+    ],
+    description: 'The Meteora pool strategy to get info for',
+  },
+  {
+    displayName: 'Amount of USDC to deposit in %',
+    name: 'amountUsdc',
+    type: 'number',
+    default: 100,
+    required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPositionAtPrice'],
+      },
+    },
+  },
+  {
+    displayName: 'Amount of SOL to deposit in %',
+    name: 'amountSol',
+    type: 'number',
+    default: 100,
+    required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPositionAtPrice'],
+      },
+    },
+  },
+  {
+    displayName: 'Average Price',
+    name: 'avgPrice',
+    type: 'number',
+    default: 130,
+    required: true,
+    displayOptions: {
+      show: {
+        operation: ['openPositionAtPrice'],
       },
     },
   }
