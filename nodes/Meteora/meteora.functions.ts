@@ -86,7 +86,10 @@ export async function closePositions(dlmmPool: DLMM, connection: Connection, use
                 connection,
                 tx,
                 [user],
-                { skipPreflight: false }
+                {
+                    skipPreflight: false,
+                    commitment: "finalized"
+                }
             );
 
             txHashes.push(removeBalanceLiquidityTxHash)
@@ -210,33 +213,27 @@ export async function openPositionAtPrice(dlmmPool: DLMM, connection: Connection
     const activeBinPrice = Number(activeBinLiq.pricePerToken);
 
     let diffPrice = activeBinPrice - avgPrice;
-    let minPrice = activeBinPrice;
-    let maxPrice = activeBinPrice;
 
     switch (poolStrategy) {
         default: // spot
-            if (diffPrice > 0) {
-                minPrice -= diffPrice * 2;
-            } else {
-                maxPrice -= diffPrice * 2;
-            }
+            diffPrice *= 2;
             break;
         case StrategyType.CurveBalanced:
-        case StrategyType.SpotImBalanced:
-            if (diffPrice > 0) {
-                minPrice -= diffPrice * (1 + 1/Math.SQRT2);
-            } else {
-                maxPrice -= diffPrice * (1 + 1/Math.SQRT2)
-            }
+        case StrategyType.CurveImBalanced:
+            diffPrice *= 2 * (1 + Math.SQRT1_2)
             break;
         case StrategyType.BidAskBalanced:
         case StrategyType.BidAskImBalanced:
-            if (diffPrice > 0) {
-                minPrice -= diffPrice * (2 - 1/Math.SQRT2);
-            } else {
-                maxPrice -= diffPrice * (2 - 1/Math.SQRT2)
-            }
+            diffPrice *= Math.SQRT2;
             break;
+    }
+
+    let minPrice = activeBinPrice;
+    let maxPrice = activeBinPrice;
+    if (diffPrice > 0) {
+        minPrice -= diffPrice;
+    } else {
+        maxPrice -= diffPrice;
     }
 
     const {activeBin, bins} = await dlmmPool.getBinsBetweenMinAndMaxPrice(minPrice / 1000, maxPrice / 1000);
@@ -244,13 +241,11 @@ export async function openPositionAtPrice(dlmmPool: DLMM, connection: Connection
 
     let minBinId = Math.min(...binIds);
     let maxBinId = Math.max(...binIds);
-    if ((maxBinId - minBinId) >= 69) {
+    if ((maxBinId - minBinId) > 69) {
         if (diffPrice > 0) {
-            maxBinId--;
-            minBinId = maxBinId - 68;
+            minBinId = maxBinId - 69;
         } else {
-            minBinId++;
-            maxBinId = minBinId + 68;
+            maxBinId = minBinId + 69;
         }
     }
 
