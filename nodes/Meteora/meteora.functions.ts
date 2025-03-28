@@ -15,7 +15,9 @@ export interface IPositionData {
     avgPrice?: number,
     endPrice?: number,
     xAmount?: number,
-    yAmount?: number
+    yAmount?: number,
+    xFee?: number,
+    yFee?: number
 }
 
 function calcAvgPrice(positions: PositionBinData[]): number {
@@ -46,6 +48,8 @@ export async function getUserPositions(dlmmPool: DLMM, user: PublicKey): Promise
             endPrice: Number(position.positionData.positionBinData[position.positionData.positionBinData.length - 1].pricePerToken),
             xAmount: Number(position.positionData.totalXAmount) / 10 ** 9, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
             yAmount: Number(position.positionData.totalYAmount) / 10 ** 6, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
+            xFee: Number(position.positionData.feeX) / 10 ** 9, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
+            yFee: Number(position.positionData.feeY) / 10 ** 6, //ПРИВОДИМ К ЧЕЛОВЕЧЕСКИМ ЕДИНИЦАМ
         }
         return positionData;
     })
@@ -143,43 +147,64 @@ export async function openPosition(dlmmPool: DLMM, connection: Connection, user:
 
     const newBalancePosition = Keypair.generate();
 
-    const createPositionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
-        positionPubKey: newBalancePosition.publicKey,
-        user: user.publicKey,
-        totalXAmount,
-        totalYAmount,
-        slippage: 0.1,
-        strategy: {
-            maxBinId,
-            minBinId,
-            strategyType: poolStrategy,
-        },
-    });
+    let createPositionTx = null;
+    for (let attempt = 5; attempt >= 0; attempt--) {
+        try {
+            createPositionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
+                positionPubKey: newBalancePosition.publicKey,
+                user: user.publicKey,
+                totalXAmount,
+                totalYAmount,
+                slippage: 0.1,
+                strategy: {
+                    maxBinId,
+                    minBinId,
+                    strategyType: poolStrategy,
+                },
+            });
 
-    //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
-    createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 100000
-    }));
-
-    const createBalancePositionTxHash = await sendAndConfirmTransaction(
-        connection,
-        createPositionTx,
-        [user, newBalancePosition]
-    );
-
-    let positionData: IPositionData = {
-        id: newBalancePosition.publicKey.toBase58(),
-        bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+            //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+            createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
+                microLamports: 100000
+            }));
+            
+            attempt = 0;
+        } catch (e) {
+            if (attempt == 0) {
+                throw e;
+            }
+        }
     }
 
-    returnData.push({
-        json: {
-            poolAddress: dlmmPool.pubkey.toBase58(),
-            activeBinPrice: activeBinPrice,
-            positions: positionData,
-            txHash: createBalancePositionTxHash,
-        },
-    });
+    for (let attempt = 5; attempt >= 0; attempt--) {
+        try {
+            const createBalancePositionTxHash = await sendAndConfirmTransaction(
+                connection,
+                createPositionTx!,
+                [user, newBalancePosition]
+            );
+
+            let positionData: IPositionData = {
+                id: newBalancePosition.publicKey.toBase58(),
+                bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+            }
+
+            returnData.push({
+                json: {
+                    poolAddress: dlmmPool.pubkey.toBase58(),
+                    activeBinPrice: activeBinPrice,
+                    positions: positionData,
+                    txHash: createBalancePositionTxHash,
+                },
+            });
+
+            attempt = 0;
+        } catch (e) {
+            if (attempt == 0) {
+                throw e;
+            }
+        }
+    }
     return returnData;
 }
 
@@ -254,43 +279,65 @@ export async function openPositionAtPrice(dlmmPool: DLMM, connection: Connection
 
     const newBalancePosition = Keypair.generate();
 
-    const createPositionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
-        positionPubKey: newBalancePosition.publicKey,
-        user: user.publicKey,
-        totalXAmount,
-        totalYAmount,
-        slippage: 0.1,
-        strategy: {
-            maxBinId,
-            minBinId,
-            strategyType: poolStrategy,
-        },
-    });
+    let createPositionTx = null;
+    for (let attempt = 5; attempt >= 0; attempt--) {
+        try {
+            const positionTx = await dlmmPool.initializePositionAndAddLiquidityByStrategy({
+                positionPubKey: newBalancePosition.publicKey,
+                user: user.publicKey,
+                totalXAmount,
+                totalYAmount,
+                slippage: 0.1,
+                strategy: {
+                    maxBinId,
+                    minBinId,
+                    strategyType: poolStrategy,
+                },
+            });
 
-    //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
-    createPositionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 100000
-    }));
+            //ПРИОРИТЕТНАЯ ТРАНЗАКЦИЯ, ВЫЧИСЛИТЬ ОПТИМАЛЬНУЮ ЦЕНУ
+            positionTx.add(ComputeBudgetProgram.setComputeUnitPrice({
+                microLamports: 100000
+            }));
+            createPositionTx = positionTx;
 
-    const createBalancePositionTxHash = await sendAndConfirmTransaction(
-        connection,
-        createPositionTx,
-        [user, newBalancePosition]
-    );
-
-    let positionData: IPositionData = {
-        id: newBalancePosition.publicKey.toBase58(),
-        bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+            attempt = 0;
+        } catch (e) {
+            if (attempt == 0) {
+                throw e;
+            }
+        }
     }
 
-    returnData.push({
-        json: {
-            poolAddress: dlmmPool.pubkey.toBase58(),
-            activeBinPrice: activeBinPrice,
-            positions: positionData,
-            txHash: createBalancePositionTxHash,
-        },
-    });
+    for (let attempt = 5; attempt >= 0; attempt--) {
+        try {
+            const createBalancePositionTxHash = await sendAndConfirmTransaction(
+                connection,
+                createPositionTx!,
+                [user, newBalancePosition]
+            );
+
+            let positionData: IPositionData = {
+                id: newBalancePosition.publicKey.toBase58(),
+                bins: [...Array(maxBinId - minBinId + 1)].map((_, i) => minBinId + i)
+            }
+
+            returnData.push({
+                json: {
+                    poolAddress: dlmmPool.pubkey.toBase58(),
+                    activeBinPrice: activeBinPrice,
+                    positions: positionData,
+                    txHash: createBalancePositionTxHash,
+                },
+            });
+            
+            attempt = 0;
+        } catch (e) {
+            if (attempt == 0) {
+                throw e;
+            }
+        }
+    }
     return returnData;
 }
 
