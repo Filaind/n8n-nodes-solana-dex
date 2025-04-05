@@ -2,6 +2,32 @@ import { INodeProperties } from 'n8n-workflow';
 
 export const getQuote: INodeProperties[] = [
   {
+    displayName: 'Quote requests',
+    name: 'requestCount',
+    type: 'number',
+    default: 10,
+    required: true,
+    description: 'Number of quote requests to search the best one from',
+    displayOptions: {
+      show: {
+        operation: ['getQuote'],
+      },
+    },
+  },
+  {
+    displayName: 'Quote timeout',
+    name: 'requestTimeout',
+    type: 'number',
+    default: 1000,
+    required: true,
+    description: 'Timeout for single quote request in milliseconds',
+    displayOptions: {
+      show: {
+        operation: ['getQuote'],
+      },
+    },
+  },
+  {
     displayName: 'Input Mint',
     name: 'inputMint',
     type: 'string',
@@ -56,6 +82,32 @@ export const getQuote: INodeProperties[] = [
 ];
 
 export const swapTokens: INodeProperties[] = [
+  {
+    displayName: 'Quote requests',
+    name: 'requestCount',
+    type: 'number',
+    default: 10,
+    required: true,
+    description: 'Number of quote requests to search the best one from',
+    displayOptions: {
+      show: {
+        operation: ['swapTokens'],
+      },
+    },
+  },
+  {
+    displayName: 'Quote timeout',
+    name: 'requestTimeout',
+    type: 'number',
+    default: 1000,
+    required: true,
+    description: 'Timeout for single quote request in milliseconds',
+    displayOptions: {
+      show: {
+        operation: ['swapTokens'],
+      },
+    },
+  },
   {
     displayName: 'Input Mint',
     name: 'inputMint',

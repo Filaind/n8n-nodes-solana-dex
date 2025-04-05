@@ -28,12 +28,16 @@ export class Jupiter implements INodeType {
 
       switch (operation) {
         case 'getQuote':
+          const requestCountQuote = this.getNodeParameter('requestCount', i) as number;
+          const requestTimeoutQuote = this.getNodeParameter('requestTimeout', i) as number;
           const inputMintQuote = this.getNodeParameter('inputMint', i) as string;
           const outputMintQuote = this.getNodeParameter('outputMint', i) as string;
           const amountQuote = this.getNodeParameter('amount', i) as string;
           const slippageBpsQuote = this.getNodeParameter('slippageBps', i) as number;
           
           returnData.push(...await getQuote(
+            requestCountQuote,
+            requestTimeoutQuote,
             inputMintQuote,
             outputMintQuote,
             amountQuote,
@@ -42,12 +46,16 @@ export class Jupiter implements INodeType {
           break;
 
         case 'swapTokens':
+          const requestCountSwap = this.getNodeParameter('requestCount', i) as number;
+          const requestTimeoutSwap = this.getNodeParameter('requestTimeout', i) as number;
           const inputMintSwap = this.getNodeParameter('inputMint', i) as string;
           const outputMintSwap = this.getNodeParameter('outputMint', i) as string;
           const amountSwap = this.getNodeParameter('amount', i) as string;
           const slippageBpsSwap = this.getNodeParameter('slippageBps', i) as number;
           
           returnData.push(...await swapTokens(
+            requestCountSwap,
+            requestTimeoutSwap,
             connection,
             user,
             inputMintSwap,
